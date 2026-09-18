@@ -1,0 +1,31 @@
+{
+  "name": "@brianvia/ua-spoofer",
+  "version": "0.1.0",
+  "description": "fetch()/curl wearing an AI-crawler User-Agent (Claude-User, GPTBot, PerplexityBot...). Often unwalls pages.",
+  "type": "module",
+  "main": "index.js",
+  "exports": "./index.js",
+  "bin": {
+    "uacurl": "./uacurl"
+  },
+  "files": [
+    "index.js",
+    "bots.txt",
+    "uacurl"
+  ],
+  "scripts": {
+    "test": "npm run build:ext && node --test",
+    "build:ext": "cp bots.txt extension/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrianVia/ua-spoofer.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "license": "MIT"
+}

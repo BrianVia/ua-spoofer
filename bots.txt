@@ -1,0 +1,9 @@
+# name|user-agent|description   (shared by uacurl, the npm package, and the extension)
+claude-user|Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Claude-User/1.0; +claudebot@anthropic.com|user-directed Claude page fetch (often unwalls)
+claudebot|Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ClaudeBot/1.0; +claudebot@anthropic.com|Anthropic crawler
+gptbot|Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; GPTBot/1.2; +https://openai.com/gptbot|OpenAI training crawler
+chatgpt-user|Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot|user-directed ChatGPT fetch
+perplexity|Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot|PerplexityBot
+googlebot|Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)|Googlebot (classic)
+openai-fd|OpenAI File Downloader/1.0|"OpenAI File Downloader"
+chrome|Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36|boring real Chrome

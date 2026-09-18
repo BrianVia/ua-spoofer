@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# uacurl — curl, but wearing someone else's User-Agent.
+#
+# Usage:
+#   uacurl [--as <bot>] [all normal curl args...]
+#
+# Everything except the flags below is passed straight to curl. A plain
+# `-A` in your own args wins over the injected one (curl honors the last -A).
+#
+# Flags:
+#   --as, -b <bot>   pick an identity (default: claude-user)
+#   --list           show the bot table
+#   --bots           print bot names only (used by shell completion)
+#   --completions    print a completion script: --completions bash|zsh
+#   --help, -h       this text
+
+set -euo pipefail
+
+DEFAULT_BOT="claude-user"
+
+# One registry, shared with index.js and the extension: bots.txt next to this script.
+here="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+BOTS=()
+while IFS= read -r row; do
+  [[ -z "$row" || "$row" == \#* ]] && continue
+  BOTS+=("$row")
+done < "$here/bots.txt"
+
+ua_for() {
+  local row name rest
+  for row in "${BOTS[@]}"; do
+    name="${row%%|*}"
+    if [[ "$name" == "$1" ]]; then
+      rest="${row#*|}"
+      echo "${rest%%|*}"
+      return 0
+    fi
+  done
+  echo "uacurl: unknown bot '$1' (see --list)" >&2
+  return 2
+}
+
+list_bots() {
+  local row name rest ua desc
+  for row in "${BOTS[@]}"; do
+    name="${row%%|*}"
+    rest="${row#*|}"
+    ua="${rest%%|*}"
+    desc="${rest#*|}"
+    printf '%-14s %s\n' "$name" "$desc"
+  done
+}
+
+bot_names() {
+  local row
+  for row in "${BOTS[@]}"; do
+    echo "${row%%|*}"
+  done
+}
+
+emit_completions() {
+  case "${1:-}" in
+    bash)
+      cat <<'EOF'
+_uacurl() {
+  local cur prev bots
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  bots="$(uacurl --bots 2>/dev/null)" || return
+  case "$prev" in
+    --as|-b)
+      COMPREPLY=($(compgen -W "$bots" -- "$cur"))
+      return ;;
+  esac
+  if [[ "$cur" == --as=* ]]; then
+    local m
+    while read -r m; do
+      [[ -n "$m" ]] && COMPREPLY+=("--as=$m")
+    done < <(compgen -W "$bots" -- "${cur#--as=}")
+    return
+  fi
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=($(compgen -W "--as --list --bots --completions --help" -- "$cur"))
+  fi
+}
+complete -F _uacurl uacurl
+EOF
+      ;;
+    zsh)
+      cat <<'EOF'
+#compdef uacurl
+_uacurl() {
+  local -a bots
+  bots=(${(f)"$(command uacurl --bots 2>/dev/null)"}) || return
+  _arguments \
+    '(-b --as)-b[impersonate a bot]:bot:($bots)' \
+    '(-b --as)--as=[impersonate a bot]:bot:($bots)' \
+    '(--help --completions --bots)--list[show the bot table]' \
+    '--help[show usage]' \
+    '--completions[emit a completion script]:shell:(bash zsh)' \
+    '*:curl argument:_normal'
+}
+if [[ "${funcstack[1]}" == "_uacurl" ]]; then
+  _uacurl "$@"
+else
+  compdef _uacurl uacurl
+fi
+EOF
+      ;;
+    *)
+      echo "uacurl: --completions requires 'bash' or 'zsh'" >&2
+      exit 2 ;;
+  esac
+}
+
+bot="$DEFAULT_BOT"
+curl_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --list)
+      list_bots
+      exit 0 ;;
+    --bots)
+      bot_names
+      exit 0 ;;
+    --completions)
+      [[ $# -ge 2 ]] || { echo "uacurl: --completions requires 'bash' or 'zsh'" >&2; exit 2; }
+      emit_completions "$2"
+      exit 0 ;;
+    --as|-b)
+      [[ $# -ge 2 ]] || { echo "uacurl: $1 requires an argument" >&2; exit 2; }
+      bot="$2"
+      shift 2 ;;
+    --as=*)
+      bot="${1#--as=}"
+      shift ;;
+    --help|-h)
+      sed -n '2,17p' "$0"
+      echo "bots:"; list_bots
+      exit 0 ;;
+    *)
+      curl_args+=("$1")
+      shift ;;
+  esac
+done
+
+exec curl -A "$(ua_for "$bot")" "${curl_args[@]}"
